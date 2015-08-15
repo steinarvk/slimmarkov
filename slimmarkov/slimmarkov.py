@@ -18,7 +18,7 @@ from .utils import (bisect_right_with_key, bisect_left_with_key,
 
 
 __author__ = "Steinar V. Kaldager"
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 
 BEGIN = "symbol:BEGIN"
@@ -111,7 +111,7 @@ class MarkovNode(object):
     self.offset = write_message_at(out, node_pb)
 
 def write_symbol_table(symbols, out):
-  table_pb = pb.SymbolTable()
+  table_pb = SymbolTable()
   for symbol in symbols:
     symbol_pb = table_pb.entry.add()
     symbol_pb.data = symbol.data
