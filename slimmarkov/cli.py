@@ -5,9 +5,8 @@ import humanize
 
 import markovify
 
-import slimmarkov
-
-from utils import get_ram_usage
+from .slimmarkov import (train_to_disk, load_from_disk)
+from .utils import get_ram_usage
 
 _log_format = '%(asctime)-15s %(levelname)s [%(filename)s:%(lineno)d] %(message)s'
 
@@ -16,7 +15,7 @@ def make_cli_training_module(subparsers):
     with open(args.training_data, "r") as f:
       data = f.read().decode("utf-8")
     with open(args.output_model, "w") as f:
-      slimmarkov.train_to_disk(markovify.Text, f, data, args.state_size)
+      train_to_disk(markovify.Text, f, data, args.state_size)
   parser = subparsers.add_parser("train",
     help="train a markovify.Text instance from a text file to a disk model")
   parser.add_argument("training_data",
@@ -60,7 +59,7 @@ def make_cli_benchmark_module(subparsers):
           humanize.naturalsize(get_ram_usage()))
       else:
         assert args.state_size is None
-        text = slimmarkov.load_from_disk(markovify.Text, f,
+        text = load_from_disk(markovify.Text, f,
           cache_levels=args.cache_levels,
           cache_ratio=args.cache_ratio)
         logging.info("disk model is consuming %s RAM",

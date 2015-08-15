@@ -1,11 +1,11 @@
-import length_headers
+from .length_headers import encode_length_header, decode_length_header
 
 _buffer_guess = 4096
 
 def write_message_at(f, message):
   pos = f.tell()
   data = message.SerializeToString()
-  header = length_headers.encode_length_header(len(data))
+  header = encode_length_header(len(data))
   f.write(header)
   f.write(data)
   return pos
@@ -14,7 +14,7 @@ def read_message_at(f, pos, message_class, seek_after=False):
   f.seek(pos)
   message = message_class()
   data = f.read(_buffer_guess)
-  datalen, skip = length_headers.decode_length_header(data)
+  datalen, skip = decode_length_header(data)
   if len(data) < (datalen + skip):
     data += f.read(datalen + skip - len(data))
   payload = data[skip:skip+datalen]

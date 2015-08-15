@@ -11,12 +11,14 @@ import os
 import struct
 import markovify
 
-import pbtool
-import proto.slimmarkov_pb2 as pb
-import cli
-from utils import (bisect_right_with_key, bisect_left_with_key,
-                   select_top_ratio, get_ram_usage)
+from .pbtool import (read_message_at, write_message_at)
+from .proto.slimmarkov_pb2 import (MarkovTree, Header, SymbolTable)
+from .utils import (bisect_right_with_key, bisect_left_with_key,
+                    select_top_ratio, get_ram_usage)
 
+
+__author__ = "Steinar V. Kaldager"
+__version__ = "0.1.0"
 
 
 BEGIN = "symbol:BEGIN"
@@ -94,7 +96,7 @@ class MarkovNode(object):
   def write(self, out):
     self.children.sort(key=lambda c: c.symbol_id)
     cum_weight = 0
-    node_pb = pb.MarkovTree(
+    node_pb = MarkovTree(
       symbol_id=self.symbol_id,
       total_weight=self.weight,
     )
@@ -106,7 +108,7 @@ class MarkovNode(object):
       if child.children:
         assert child.offset is not None
         branch_pb.next_node_offset = child.offset
-    self.offset = pbtool.write_message_at(out, node_pb)
+    self.offset = write_message_at(out, node_pb)
 
 def write_symbol_table(symbols, out):
   table_pb = pb.SymbolTable()
@@ -118,7 +120,7 @@ def write_symbol_table(symbols, out):
     if symbol.offset is not None:
       symbol_pb.offset = symbol.offset
   logging.info("writing %d entries to symbol table", len(table_pb.entry))
-  return pbtool.write_message_at(out, table_pb)
+  return write_message_at(out, table_pb)
 
 class Model(object):
   def __init__(self, header, symbols, handle, rand):
@@ -174,7 +176,7 @@ class Model(object):
     try:
       return self.cache[pos]
     except KeyError:
-      return pbtool.read_message_at(self.handle, pos, pb.MarkovTree)
+      return read_message_at(self.handle, pos, MarkovTree)
 
   def draw_from_node(self, node):
     w = self.rand.randint(0, node.total_weight - 1)
@@ -206,7 +208,7 @@ def read_model_training_data(f):
   magic = f.read(len(_magic_string))
   if magic != _magic_string:
     raise ValueError("wrong file header")
-  header = pbtool.read_message_at(f, f.tell(), pb.Header,
+  header = read_message_at(f, f.tell(), Header,
     seek_after=True)
   data = zlib.decompress(f.read(header.data_length))
   if hashlib.sha1(data).hexdigest() != header.data_sha1:
@@ -217,7 +219,7 @@ def read_model(f, size):
   magic = f.read(len(_magic_string))
   if magic != _magic_string:
     raise ValueError("wrong file header")
-  header = pbtool.read_message_at(f, f.tell(), pb.Header)
+  header = read_message_at(f, f.tell(), Header)
   logging.info("read header:")
   for line in str(header).splitlines():
     logging.info("  " + line)
@@ -225,7 +227,7 @@ def read_model(f, size):
   f.seek(size - footer_size)
   st_offset = struct.unpack("<Q", f.read(footer_size))[0]
   logging.info("reading symbol table..")
-  symbol_table = pbtool.read_message_at(f, st_offset, pb.SymbolTable)
+  symbol_table = read_message_at(f, st_offset, SymbolTable)
   symbols = []
   logging.info("%d symbols in symbol table", len(symbol_table.entry))
   for entry in symbol_table.entry:
@@ -236,8 +238,8 @@ def read_model(f, size):
 def build_disk_model(markovify_chain, out,
     data=None, model_class=None):
   out.write(_magic_string)
-  header = pb.Header(
-    version = "0.0.2",
+  header = Header(
+    version = __version__,
     state_size = markovify_chain.state_size,
     timestamp_utc = datetime.datetime.utcnow().isoformat(),
   )
@@ -252,7 +254,7 @@ def build_disk_model(markovify_chain, out,
     header.data_sha1 = hashlib.sha1(data).hexdigest()
     compressed_data = zlib.compress(data)
     header.data_length = len(compressed_data)
-  pbtool.write_message_at(out, header)
+  write_message_at(out, header)
   if data:
     out.write(compressed_data)
   symbols = build_symbol_table(markovify_chain)
@@ -349,6 +351,3 @@ def load_from_disk(markovify_class, f, cache_levels, cache_ratio):
     state_size=model.header.state_size,
     chain=chain_like,
   )
-
-if __name__ == '__main__':
-  cli.main()
