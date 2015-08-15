@@ -1,0 +1,40 @@
+syntax = "proto2";
+
+package slimmarkov;
+
+message Header {
+  optional string version = 1;
+  optional int32 state_size = 2;
+
+  optional string timestamp_utc = 3;
+
+  optional string data_sha1 = 4;
+  optional int64 data_length = 5;
+
+  optional string model_class = 7;
+};
+
+message SymbolEntry {
+  optional string data = 1;
+  optional int64 id = 2;
+  optional int64 frequency = 3;
+  optional int64 offset = 4;
+};
+
+message SymbolTable {
+  repeated SymbolEntry entry = 1;
+}
+
+message MarkovBranch {
+  optional int64 symbol_id = 1;
+  optional int64 cumulative_weight = 2;
+
+  optional int64 next_node_offset = 3;
+};
+
+message MarkovTree {
+  optional int64 symbol_id = 1;
+  optional int64 total_weight = 2;
+
+  repeated MarkovBranch branches = 3;
+}
