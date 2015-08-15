@@ -16,7 +16,7 @@ sentence at least within a few seconds, while using dramatically less memory
 than markovify. (This makes it easier to try applications where several
 models are used at once.)
 
-markovify: https://github.com/jsvine/markovify
+[markovify]: https://github.com/jsvine/markovify
 
 Interface
 ---------
