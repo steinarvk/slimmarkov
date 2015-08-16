@@ -18,7 +18,7 @@ from .utils import (bisect_right_with_key, bisect_left_with_key,
 
 
 __author__ = "Steinar V. Kaldager"
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 
 
 BEGIN = "symbol:BEGIN"
@@ -99,6 +99,7 @@ class MarkovNode(object):
 
 def write_symbol_table(symbols, out):
   table_pb = SymbolTable()
+  sym_sizes = []
   for symbol in symbols:
     symbol_pb = table_pb.entry.add()
     symbol_pb.data = symbol.data
@@ -106,7 +107,10 @@ def write_symbol_table(symbols, out):
     symbol_pb.frequency = symbol.frequency
     if symbol.offset is not None:
       symbol_pb.offset = symbol.offset
+    sym_sizes.append(symbol_pb.ByteSize())
   logging.info("writing %d entries to symbol table", len(table_pb.entry))
+  logging.info("min size %d, max size %d, average size %0.2lf",
+    min(sym_sizes), max(sym_sizes), sum(sym_sizes) / float(len(sym_sizes)))
   return write_message_at(out, table_pb)
 
 class Model(object):

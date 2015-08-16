@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
   name='slimmarkov',
-  version='0.1.3',
+  version='0.1.4',
   packages=['slimmarkov', 'slimmarkov.proto'],
   zip_safe=False,
   install_requires=[
