@@ -18,7 +18,7 @@ from .utils import (bisect_right_with_key, bisect_left_with_key,
 
 
 __author__ = "Steinar V. Kaldager"
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 
 BEGIN = "symbol:BEGIN"
@@ -245,12 +245,11 @@ def build_disk_model(markovify_chain, out,
   if data:
     out.write(compressed_data)
   symbols = build_symbol_table(markovify_chain)
-  symbols_by_name = {s.data: s for s in symbols}
-  symbols_by_id = {s.index: s for s in symbols}
+  symbol_indices_by_name = {s.data: s.index for s in symbols}
   node_chunks = {}
   next_parentage = collections.defaultdict(lambda: [])
   def chain_word_id(w):
-    return symbols_by_name[translate_markovify_word(w)].index
+    return symbol_indices_by_name[translate_markovify_word(w)]
   for nm1gram, leaf_items in markovify_chain.model.items():
     for leaf, weight in leaf_items.items():
       ngram = map(chain_word_id, (nm1gram + (leaf,)))
@@ -268,7 +267,8 @@ def build_disk_model(markovify_chain, out,
       if len(key) > 1:
         next_parentage[key[:-1]].append(node)
       else:
-        symbols_by_id[key[0]].offset = node.offset
+        sym = symbols[key[0]]
+        symbols[key[0]] = SymbolTableEntry(sym.data, sym.index, sym.frequency, node.offset)
     pos1 = out.tell()
     size = pos1 - pos0
     logging.debug("on level %d, %d nodes (%s)", level_no,
