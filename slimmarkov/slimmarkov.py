@@ -18,7 +18,7 @@ from .utils import (bisect_right_with_key, bisect_left_with_key,
 
 
 __author__ = "Steinar V. Kaldager"
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 
 BEGIN = "symbol:BEGIN"
@@ -39,6 +39,8 @@ CachedBranch = collections.namedtuple("CachedBranch",
   "symbol_id cumulative_weight next_node_offset")
 CachedNode = collections.namedtuple("CachedNode",
   "symbol_id total_weight branches")
+SymbolTableEntry = collections.namedtuple("SymbolTableEntry",
+  "data index frequency offset")
 
 class MarkovifyInterface(object):
   def __init__(self, model):
@@ -60,21 +62,6 @@ def translate_markovify_word(w):
     return END
   return word(w)
 
-class SymbolTableEntry(object):
-  def __init__(self, data, index, frequency, offset=None):
-    self.data = data
-    self.index = index
-    self.frequency = frequency
-    self.offset = offset
-
-  def __dict__(self):
-    return {
-      "data": self.data,
-      "index": self.index,
-      "frequency": self.frequency,
-      "offset": self.offset,
-    }
-
 def build_symbol_table(markovify_chain):
   ctr = collections.Counter()
   for nm1gram, leaf_items in markovify_chain.model.items():
@@ -83,7 +70,7 @@ def build_symbol_table(markovify_chain):
         ctr[translate_markovify_word(chain_word)] += weight
   rv = []
   for index, (word, weight) in enumerate(ctr.most_common()):
-    rv.append(SymbolTableEntry(word, index, weight))
+    rv.append(SymbolTableEntry(word, index, weight, None))
   return rv
 
 class MarkovNode(object):
